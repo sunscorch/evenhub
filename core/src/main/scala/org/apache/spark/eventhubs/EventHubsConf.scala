@@ -629,19 +629,16 @@ final class EventHubsConf private (private val connectionStr: String)
       .read[Map[String, Object]] getOrElse Map.empty
     if (params.isEmpty) {
       self.get(AadAuthCallbackKey) map (className => {
-        Class
-          .forName(className)
-          .getConstructor()
-          .newInstance()
-          .asInstanceOf[AadAuthenticationCallback]
+        val classLoader = Thread.currentThread().getContextClassLoader
+        val callbackClass = classLoader.loadClass(className)
+        callbackClass.getConstructor().newInstance().asInstanceOf[AadAuthenticationCallback]
       })
     } else {
       self.get(AadAuthCallbackKey) map (className => {
-        Class
-          .forName(className)
-          .getConstructor(classOf[Map[String, Object]])
-          .newInstance(params)
-          .asInstanceOf[AadAuthenticationCallback]
+
+        val classLoader = Thread.currentThread().getContextClassLoader
+        val callbackClass = classLoader.loadClass(className)
+        callbackClass.getConstructor(classOf[Map[String, Object]]).newInstance(params).asInstanceOf[AadAuthenticationCallback]
       })
     }
   }
